@@ -5,6 +5,8 @@ const MyAxios = {}
 
 MyAxios.install = (Vue)=>{
 
+  //给axios添加基础路径
+  axios.defaults.baseURL = 'http://localhost:8888/user/'
 
   Vue.prototype.$http = axios
 }

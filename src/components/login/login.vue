@@ -8,7 +8,7 @@
       <el-form-item label="密码">
         <el-input v-model="password"></el-input>
       </el-form-item>
-      <el-button class="login-button" type="primary" round>主要按钮</el-button>
+      <el-button class="login-button" type="primary" @click = "handleLogin" round>主要按钮</el-button>
     </el-form>
 
   </div>
@@ -20,6 +20,13 @@
       return {
         username: '',
         password: ''
+      }
+    },
+    methods:{
+      handleLogin:function(){
+        this.$http.get("login").then(res=>{
+           console.log("数据：" + res.status , res.status)
+        })
       }
     }
   }
