@@ -6,9 +6,9 @@
         <el-input v-model="username"></el-input>
       </el-form-item>
       <el-form-item label="密码">
-        <el-input v-model="password"></el-input>
+        <el-input v-model="password" show-password class="eleput"></el-input>
       </el-form-item>
-      <el-button class="login-button" type="primary" @click = "handleLogin" round>主要按钮</el-button>
+      <el-button class="login-button" type="primary" @click = "handleLogin" round>登陆</el-button>
     </el-form>
 
   </div>
@@ -34,7 +34,6 @@
         //async + await 将异步代码实现为同步代码
         const res = await this.$http.post("login",params)    //async放在方法前面  await放在异步操作的前面
 
-        console.log("数据：" + res.data)
         let msg = res.data
         if (msg.status === 200){
             _this.$message.success("登陆成功！")
@@ -86,4 +85,5 @@
     margin-top: 0.625rem;
     width: 100%;
   }
+
 </style>
