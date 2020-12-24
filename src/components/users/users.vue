@@ -21,7 +21,7 @@
     </el-row>
     <!-- 3.表格-->
      <el-table
-           :data="tableData"
+           :data="users"
            style="width: 100%">
            <el-table-column
              type="index"
@@ -29,28 +29,27 @@
              width="60">
            </el-table-column>
            <el-table-column
-             prop="name"
+             prop="userName"
              label="姓名"
              width="80">
            </el-table-column>
            <el-table-column
-             prop="address"
+             prop="email"
              label="邮箱">
            </el-table-column>
            <el-table-column
-             prop="address"
+             prop="mobile"
              label="电话">
            </el-table-column>
            <el-table-column
-             prop="address"
+             prop="creatTime"
              label="创建时间">
            </el-table-column>
            <el-table-column
-               prop="address"
+               prop="status"
                label="用户状态">
            </el-table-column>
            <el-table-column
-               prop="address"
                label="操作">
            </el-table-column>
 
@@ -62,10 +61,34 @@
 <script>
   export default{
     data() {
-      return {
+      return {   
           query:'',
-          tableData:[]
+          users:[],
+          totalpage:0,
+          pagenum:1,  /* 默认第一页*/
+          pagesize:2  /* 默认每页显示两行*/
       }
+    },
+    methods:{
+      //异步获取用户列表
+      async getUserList(){
+          //设置请求头，让token一起传到后端
+          const token = localStorage.getItem("token");
+          this.$http.defaults.headers.common['Authorization'] = token   //设置请求头的具体方法
+
+          const res = await this.$http.get('users?query='+this.query + '&pagenum=' + this.pagenum + '&pagesize=' + this.pagesize)
+          console.log(res)
+          //给各个东西赋值
+          if(res.data.meta.status === 200){
+            this.users = res.data.users
+          }else{
+            this.$message.error("获取用户列表失败")
+          }
+      }
+    },
+    created() {
+      //页面加载的时候执行
+      this.getUserList()
     }
   }
 </script>
