@@ -8,10 +8,17 @@ import '@/assets/css/reset.css'
 //导入自己的myaxios插件
 import MyAxios from '@/plugins/myAxios.js'
 import router from './router'
+import moment from 'moment'
 
 Vue.config.productionTip = false
 Vue.use(ElementUI)
 Vue.use(MyAxios)
+
+//时间拦截器
+Vue.filter('fmtdate',(v)=>{
+  return moment(v).format('YYYY-MM-DD')
+})
+
 
 /* eslint-disable no-new */
 new Vue({
