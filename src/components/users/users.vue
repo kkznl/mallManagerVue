@@ -36,23 +36,21 @@
       <el-table-column label="创建时间">
         <template v-slot="users">
           <!-- v-slot代替了以前的slot-scope  row 代表的是当前行 -->
-               {{users.row.creatTime | fmtdate}}
-             </template>
-           </el-table-column>
-           <el-table-column
-               prop="status"
-               label="用户状态">
-               <template v-slot="users">
-                 <!-- 如果组件需要显示，外面需要包裹一个template容器-->
-          <el-switch v-model="users.row.status" active-color="#13ce66" inactive-color="#ff4949">
+          {{users.row.creatTime | fmtdate}}
+        </template>
+      </el-table-column>
+      <el-table-column prop="status" label="用户状态">
+        <template v-slot="users">
+          <!-- 如果组件需要显示，外面需要包裹一个template容器-->
+          <el-switch v-model="users.row.status" @change="updateStatus(users.row)" active-color="#13ce66" inactive-color="#ff4949">
           </el-switch>
         </template>
       </el-table-column>
       <el-table-column label="操作">
         <template v-slot="user">
-          <el-button size="mini" plain type="primary" icon="el-icon-edit" circle></el-button>
+          <el-button size="mini" plain type="primary" icon="el-icon-edit" circle @click="openUpdateUser(user.row)"></el-button>
           <el-button size="mini" plain type="danger" icon="el-icon-delete" @click="open(user.row.id)" circle></el-button>
-          <el-button size="mini" plain type="success" icon="el-icon-check" circle></el-button>
+          <el-button size="mini" plain type="success" icon="el-icon-check" @click="openUpdateRoleId(user.row)" circle></el-button>
         </template>
       </el-table-column>
 
@@ -84,8 +82,46 @@
         <el-button type="primary" @click="addUser">添 加</el-button>
       </div>
     </el-dialog>
-  </el-card>
 
+    <!-- 更新用户的弹框-->
+    <el-dialog title="添加用户" :visible.sync="dialogSetNewUser">
+      <el-form :model="newUser">
+        <el-form-item label="用户名" label-width="100px">
+          <el-input v-model="newUser.userName" autocomplete="off" :disabled="true"></el-input>
+        </el-form-item>
+        <el-form-item label="邮 箱" label-width="100px">
+          <el-input v-model="newUser.email" autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="电话" label-width="100px">
+          <el-input v-model="newUser.mobile" autocomplete="off"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogSetNewUser = false">取 消</el-button>
+        <el-button type="primary" @click="setNewUser">添 加</el-button>
+      </div>
+    </el-dialog>
+
+
+  <!-- 更新用户的角色id的弹框-->
+    <el-dialog title="角色控制" :visible.sync="dialogSetNewrole">
+      <el-form :model="newRole">
+        <el-form-item label="用户名" label-width="120px">
+          <el-input v-model="newRole.userName" autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="角色" label-width="120px">
+          <el-select v-model="newRole.roleId">
+            <el-option v-for="item in roles" :key="item.roleId" :label="item.roleName" :value="item.roleId"></el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogSetNewrole = false">取 消</el-button>
+        <el-button type="primary" @click="updateUserRole">确 定</el-button>
+      </div>
+    </el-dialog>
+
+  </el-card>
 
 
 
@@ -102,13 +138,28 @@
         /* 默认第一页*/
         pagesize: 2,
         /* 默认每页显示两行*/
-        dialogFormVisible: false,
+        dialogFormVisible: false, //增加用户的弹窗控制
         user: {
           userName: '',
           password: '',
           email: '',
           mobile: ''
-        }
+        },
+        dialogSetNewUser: false, //更新用户的弹窗控制
+        newUser: {
+          userName: '',
+          email: '',
+          mobile: '',
+          id: 0
+        },
+        dialogSetNewrole:false, //更新用户角色id的弹窗控制
+        newRole:{
+          id:0,
+          userName:'slk',
+          roleId:40
+        },  //用户的角色信息
+        roles:[],  //用来储存所有角色id信息的数组
+
       }
     },
     methods: {
@@ -118,9 +169,8 @@
         const token = localStorage.getItem("token");
         this.$http.defaults.headers.common['Authorization'] = token //设置请求头的具体方法
 
-        const res = await this.$http.get('users?query=' + this.query + '&pagenum=' + this.pagenum + '&pagesize=' +
+        const res = await this.$http.get('user/users?query=' + this.query + '&pagenum=' + this.pagenum + '&pagesize=' +
           this.pagesize)
-        console.log(res)
         //给各个东西赋值
         if (res.data.meta.status === 200) {
           this.users = res.data.users
@@ -165,9 +215,9 @@
         params.append("password", this.user.password)
         params.append("email", this.user.email)
         params.append("mobile", this.user.mobile)
-        const msg = await this.$http.post('/addUser', params)
+        const msg = await this.$http.post('user/addUser', params)
         if (msg.status === 200) {
-          console.log('status:',msg.status)
+          console.log('status:', msg.status)
           //成功，弹框提醒，并清空user内容
           this.$message.success('添加成功！')
           this.user = {}
@@ -186,15 +236,15 @@
           cancelButtonText: '取消',
           type: 'warning'
         }).then(async () => {
-          const res = await this.$http.get('deleteUser?id='+id)
-          if(res.data > 0){
+          const res = await this.$http.get('user/deleteUser?id=' + id)
+          if (res.data > 0) {
             this.$message({
               type: 'success',
               message: '删除成功!'
             })
             //重新刷新列表
             this.getUserList()
-          }else{
+          } else {
             this.$message({
               type: 'error',
               message: '删除失败!'
@@ -206,12 +256,82 @@
             message: '已取消删除'
           })
         })
+      },
+      //打开更新用户的弹窗
+      openUpdateUser(user) {
+        //打开弹窗
+        this.newUser.id = user.id
+        this.newUser.userName = user.userName
+        this.newUser.email = user.email
+        this.newUser.mobile = user.mobile
+        this.dialogSetNewUser = true
+      },
+
+      //更新用户的正儿八经的操作
+      async setNewUser() {
+        //先关闭弹窗
+        this.dialogSetNewUser = false
+        //异步获取
+        const res = await this.$http.get('user/updateUser?id=' + this.newUser.id + '&email=' + this.newUser.email +
+          '&mobile=' + this.newUser.mobile)
+        if (res.data > 0) {
+          this.$message({
+            type: 'success',
+            message: '更新成功!'
+          })
+          this.newUser = {}
+          //重新刷新列表
+          this.getUserList()
+        }else{
+          this.$message({
+            type: 'error',
+            message: '更新失败!'
+          })
+          this.newUser = {}
+        }
+      },
+      //修改用户状态
+      async updateStatus(user){
+          const res = await this.$http.get('user/updateUserStatus?id=' + user.id + '&status=' + user.status)
+          if(res.data > 0){
+            this.$message.success("状态更改成功")
+            //刷新列表
+            this.getUserList()
+          }else{
+            this.$message.error("状态更改失败")
+          }
+      },
+      //打开角色更改的弹窗的方法
+      async openUpdateRoleId(user){
+         this.dialogSetNewrole = true
+         this.newRole.id = user.id
+         this.newRole.userName = user.userName
+         this.newRole.roleId = user.roleId
+      },
+      //获取所有权限信息的方法
+      async getAllRoles(){
+        const res = await this.$http.get('role/allRoles')
+        this.roles = res.data
+      },
+      //权限修改的方法
+      async updateUserRole(){
+        this.dialogSetNewrole = false //关闭弹窗
+        var res = await this.$http.get('role/updateRole?id=' + this.newRole.id + '&roleId=' + this.newRole.roleId)
+        if(res.data > 0){
+          this.getUserList()
+          this.$message.success('权限修改成功！')
+        }else{
+          this.$message.error('权限修改失败，请重试！')
+        }
       }
 
     },
     created() {
       //页面加载的时候执行
       this.getUserList()
+
+      //页面加载的时候，获取权限列表
+      this.getAllRoles()
     }
   }
 </script>
